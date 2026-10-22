@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import pool from "./src/config/db.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import error from "./src/middlewares/error.js";
+import { runMigrations } from "./src/data/runMigrations.js";
 
 dotenv.config();
 
@@ -40,7 +41,8 @@ app.use((req, res) => {
 // ── Gestion centralisée des erreurs ──────────────────────────
 app.use(error);
 
-// ── Démarrage du serveur ──────────────────────────────────────
-app.listen(port, () => {
+// ── Démarrage du serveur et exécution des migrations ──────────
+app.listen(port, async () => {
     console.log(`✅ Server running on http://localhost:${port}`);
+    await runMigrations();
 });
