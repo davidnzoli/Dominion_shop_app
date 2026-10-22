@@ -1,4 +1,4 @@
-import { createUserService, deleteUserService, getAllUserService, getUserByIdService } from "../modeles/userModel.js";
+import { createUserService, deleteUserService, getAllUserService, getUserByIdService, updateUserService } from "../modeles/userModel.js";
 
 const handleResponse = (res, status, message, data = null)=>{
     res.status(status).json({
@@ -41,9 +41,9 @@ export const getUserById = async (req, res, next) =>{
 export const updateUser = async (req, res, next) =>{
     const {name, email} = req.body;
     try{
-        const updateUser = await updateUserService(req.params.id,name,email);
-        if(!user) return handleResponse(res,404,"user not found")
-        handleResponse(res,200,"user updated successfully", updateUser);
+        const updatedUser = await updateUserService(req.params.id, name, email);
+        if(!updatedUser) return handleResponse(res, 404, "user not found");
+        handleResponse(res, 200, "user updated successfully", updatedUser);
     }catch(err){
         next(err)
     }
@@ -51,9 +51,9 @@ export const updateUser = async (req, res, next) =>{
 
 export const deleteUser = async (req, res, next) =>{
     try{
-        const deleteUser = await deleteUserService(req.params.id);
-        if(!user) return handleResponse(res,404,"user not found")
-        handleResponse(res,200,"user deleted successfully", deleteUser);
+        const deletedUser = await deleteUserService(req.params.id);
+        if(!deletedUser) return handleResponse(res, 404, "user not found");
+        handleResponse(res, 200, "user deleted successfully", deletedUser);
     }catch(err){
         next(err)
     }
