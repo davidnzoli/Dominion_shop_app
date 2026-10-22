@@ -9,7 +9,10 @@ const handleResponse = (res, status, message, data = null)=>{
 };
 
 export const createUser = async (req, res, next) =>{
-    const {name, email} = req.body;
+    const {name, email} = req.body || {};
+    if (!name || !email) {
+        return handleResponse(res, 400, "name and email are required in the request body (JSON)");
+    }
     try{
         const newUser= await createUserService(name,email);
         handleResponse(res,201,"user created successfully", newUser);
@@ -39,7 +42,10 @@ export const getUserById = async (req, res, next) =>{
 }
 
 export const updateUser = async (req, res, next) =>{
-    const {name, email} = req.body;
+    const {name, email} = req.body || {};
+    if (!name || !email) {
+        return handleResponse(res, 400, "name and email are required in the request body (JSON)");
+    }
     try{
         const updatedUser = await updateUserService(req.params.id, name, email);
         if(!updatedUser) return handleResponse(res, 404, "user not found");
