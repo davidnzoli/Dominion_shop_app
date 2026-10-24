@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import pool from "./src/config/db.js";
 import userRoutes from "./src/routes/userRoutes.js";
+import authRoutes from "./src/routes/authRoutes.js";
 import error from "./src/middlewares/error.js";
 import { runMigrations } from "./src/data/runMigrations.js";
 
@@ -31,6 +32,7 @@ app.get("/", async (req, res) => {
 });
 
 // ── Routes API ────────────────────────────────────────────────
+app.use("/api/auth", authRoutes);
 app.use("/api", userRoutes);
 
 // ── Gestion des routes inexistantes ──────────────────────────

@@ -34,14 +34,16 @@ npm run dev
 
 Copiez `.env.example` vers `.env` et renseignez :
 
-| Variable      | Description              | Défaut          |
-|---------------|--------------------------|-----------------|
-| `PORT`        | Port du serveur          | `5001`          |
-| `DB_HOST`     | Hôte PostgreSQL          | `localhost`     |
-| `DB_PORT`     | Port PostgreSQL          | `5432`          |
-| `DB_USER`     | Utilisateur PostgreSQL   | `postgres`      |
-| `DB_PASSWORD` | Mot de passe PostgreSQL  | —               |
-| `DB_DATABASE` | Nom de la base           | `dominion-shop-db` |
+| Variable         | Description                      | Défaut                             |
+|------------------|----------------------------------|------------------------------------|
+| `PORT`           | Port du serveur                  | `5001`                             |
+| `DB_HOST`        | Hôte PostgreSQL                  | `localhost`                        |
+| `DB_PORT`        | Port PostgreSQL                  | `5432`                             |
+| `DB_USER`        | Utilisateur PostgreSQL           | `postgres`                         |
+| `DB_PASSWORD`    | Mot de passe PostgreSQL          | —                                  |
+| `DB_DATABASE`    | Nom de la base                   | `dominion-shop-db`                 |
+| `JWT_SECRET`     | Clé secrète pour signer les JWT  | —                                  |
+| `JWT_EXPIRES_IN` | Durée de validité du token       | `24h`                              |
 
 ## 📁 Structure du projet
 
@@ -49,10 +51,11 @@ Copiez `.env.example` vers `.env` et renseignez :
 Dominion_shop_app/
 ├── src/
 │   ├── config/       # Configuration DB
-│   ├── controllers/  # Logique métier
-│   ├── middlewares/  # Middlewares Express
-│   ├── models/       # Modèles de données
-│   └── routes/       # Routes API
+│   ├── contollers/   # Logique métier (users, auth)
+│   ├── data/         # Migrations SQL
+│   ├── middlewares/  # Middlewares (error, authMiddleware)
+│   ├── modeles/      # Requêtes SQL et modèles de données
+│   └── routes/       # Routes API (userRoutes, authRoutes)
 ├── docker-compose.yml
 ├── .env.example
 └── index.js
@@ -60,15 +63,28 @@ Dominion_shop_app/
 
 ## 📡 Endpoints API
 
-| Méthode | Endpoint       | Description              |
-|---------|----------------|--------------------------|
-| GET     | `/`            | Vérification de la DB    |
-| `*`     | `/api/...`     | Routes utilisateurs      |
+### Authentification (`/api/auth`)
+| Méthode | Endpoint            | Accès    | Description                                      |
+|---------|---------------------|----------|--------------------------------------------------|
+| POST    | `/api/auth/register`| Public   | Inscription avec hachage bcrypt (retourne JWT 24h)|
+| POST    | `/api/auth/login`   | Public   | Connexion par email / mot de passe (retourne JWT)|
+| GET     | `/api/auth/me`      | Protégé  | Récupère le profil de l'utilisateur connecté     |
+
+### Utilisateurs (`/api/user`)
+| Méthode | Endpoint        | Accès    | Description                           |
+|---------|-----------------|----------|---------------------------------------|
+| GET     | `/api/user`     | Public   | Liste tous les utilisateurs           |
+| GET     | `/api/user/:id` | Public   | Détail d'un utilisateur               |
+| POST    | `/api/user`     | Public   | Créer un utilisateur                  |
+| PUT     | `/api/user/:id` | Public   | Mettre à jour un utilisateur          |
+| DELETE  | `/api/user/:id` | Public   | Supprimer un utilisateur              |
 
 ## 🛠️ Technologies
 
 - **Runtime**: Node.js + ES Modules
 - **Framework**: Express 5
 - **Base de données**: PostgreSQL (via `pg`)
+- **Sécurité**: `bcryptjs` (hachage sécurisé), `jsonwebtoken` (JWT 24h)
 - **Validation**: Joi
 - **Dev**: Nodemon
+
