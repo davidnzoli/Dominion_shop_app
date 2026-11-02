@@ -26,8 +26,14 @@ cp .env.example .env
 # 4. Démarrer la base de données PostgreSQL
 docker-compose up -d
 
-# 5. Lancer le serveur en mode développement
+# 5. Lancer le serveur en mode développement (TypeScript avec rechargement à chaud)
 npm run dev
+
+# 6. Compiler pour la production
+npm run build
+
+# 7. Lancer le build de production
+npm start
 ```
 
 ## ⚙️ Variables d'environnement
@@ -50,15 +56,18 @@ Copiez `.env.example` vers `.env` et renseignez :
 ```
 Dominion_shop_app/
 ├── src/
-│   ├── config/       # Configuration DB
-│   ├── contollers/   # Logique métier (users, auth)
+│   ├── config/       # Configuration DB et variables d'environnement typées
+│   ├── contollers/   # Contrôleurs typés (users, auth)
 │   ├── data/         # Migrations SQL
-│   ├── middlewares/  # Middlewares (error, authMiddleware)
-│   ├── modeles/      # Requêtes SQL et modèles de données
-│   └── routes/       # Routes API (userRoutes, authRoutes)
+│   ├── middlewares/  # Middlewares typés (error, authMiddleware)
+│   ├── modeles/      # Services SQL et requêtes typées
+│   ├── routes/       # Routes Express typées (userRoutes, authRoutes)
+│   └── types/        # Interfaces et types TypeScript (User, Auth, etc.)
+├── dist/             # Code JavaScript compilé pour la production
 ├── docker-compose.yml
+├── tsconfig.json
 ├── .env.example
-└── index.js
+└── index.ts
 ```
 
 ## 📡 Endpoints API
@@ -81,10 +90,11 @@ Dominion_shop_app/
 
 ## 🛠️ Technologies
 
-- **Runtime**: Node.js + ES Modules
-- **Framework**: Express 5
-- **Base de données**: PostgreSQL (via `pg`)
-- **Sécurité**: `bcryptjs` (hachage sécurisé), `jsonwebtoken` (JWT 24h)
+- **Langage**: TypeScript (mode strict activé)
+- **Runtime & Dev Server**: Node.js + `tsx` (rechargement à chaud instantané)
+- **Framework**: Express 5 (avec typage strict)
+- **Base de données**: PostgreSQL (via `pg` avec pool typé)
+- **Sécurité**: `bcryptjs` (hachage sécurisé), `jsonwebtoken` (JWT 24h avec clés d'environnement validées)
 - **Validation**: Joi
 - **Dev**: Nodemon
 

@@ -7,7 +7,6 @@ const router = express.Router();
 // Routes publiques
 router.post("/register", register);
 router.post("/login", login);
-router.post("/getProfile",getProfile)
 
 // Route protégée par Token JWT
 router.get("/me", verifyToken, getProfile);
