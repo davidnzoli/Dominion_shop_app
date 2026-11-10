@@ -114,16 +114,16 @@ export const login = async (
 
         // Génération du token JWT valide 24h
         const token = jwt.sign(
-            { id: user.id, email: user.email, role: user.role },
+            { id: user.id, email: user.email, password:user.password, role: user.role },
             config.jwt.secret,
             signOptions
         );
 
         // Exclure le hash du mot de passe de la réponse
-        const { password: _, ...userSafe } = user;
+        // const { password: _, ...userSafe } = user;
 
         return handleResponse(res, 200, "Connexion réussie 🔑", {
-            user: userSafe,
+            user: user,
             token,
             expiresIn: config.jwt.expiresIn,
         });
