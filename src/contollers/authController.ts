@@ -2,10 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { config } from "../config/env.js";
+import pool from "../config/db.js";
 import {
     createUserService,
     getUserByEmailWithPasswordService,
     getUserByIdService,
+    updatePasswordByEmailService,
 } from "../modeles/userModel.js";
 import { AuthenticatedRequest } from "../types/auth.js";
 
@@ -29,7 +31,7 @@ export const register = async (
     res: Response,
     next: NextFunction
 ): Promise<Response | void> => {
-    const { name, email, password } = req.body || {};
+    const { name, email, password, role = "user" } = req.body || {};
 
     if (!name || !email || !password) {
         return handleResponse(
@@ -41,7 +43,7 @@ export const register = async (
 
     try {
         // Vérifier si l'utilisateur existe déjà
-        const existingUser = await getUserByEmailWithPasswordService(email);
+        const existingUser = await getUserByEmailWithPasswordService(email.trim());
         if (existingUser) {
             return handleResponse(
                 res,
@@ -54,8 +56,8 @@ export const register = async (
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Enregistrement dans la base de données
-        const newUser = await createUserService(name, email, hashedPassword, "user");
+        // Enregistrement dans la base de données avec le rôle fourni
+        const newUser = await createUserService(name, email.trim(), hashedPassword, role);
 
         // Options de signature JWT
         const signOptions: SignOptions = {
@@ -96,14 +98,32 @@ export const login = async (
     }
 
     try {
-        // Recherche de l'utilisateur avec son hash de mot de passe
-        const user = await getUserByEmailWithPasswordService(email);
+        // Recherche de l'utilisateur avec son hash de mot de passe (insensible à la casse et sans espaces)
+        const user = await getUserByEmailWithPasswordService(email.trim());
         if (!user || !user.password) {
             return handleResponse(res, 401, "Email ou mot de passe incorrect.");
         }
 
-        // Vérification de la correspondance du mot de passe
-        const isMatch = await bcrypt.compare(password, user.password);
+        // Vérification de la correspondance du mot de passe (Bcrypt ou texte brut rétrocompatible)
+        let isMatch = false;
+        try {
+            isMatch = await bcrypt.compare(password, user.password);
+        } catch {
+            isMatch = false;
+        }
+
+        // Support direct si le mot de passe dans la base a été saisi en clair
+        if (!isMatch && password === user.password) {
+            isMatch = true;
+            // Mise à niveau automatique vers un hash sécurisé bcrypt
+            try {
+                const newHash = await bcrypt.hash(password, 10);
+                await pool.query("UPDATE users SET password = $1 WHERE id = $2", [newHash, user.id]);
+            } catch {
+                // ignore
+            }
+        }
+
         if (!isMatch) {
             return handleResponse(res, 401, "Email ou mot de passe incorrect.");
         }
@@ -149,6 +169,39 @@ export const getProfile = async (
         }
 
         return handleResponse(res, 200, "Profil récupéré avec succès", user);
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Réinitialiser ou définir le mot de passe d'un utilisateur par son email
+export const resetPassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<Response | void> => {
+    const { email, password, role } = req.body || {};
+    if (!email || !password) {
+        return handleResponse(
+            res,
+            400,
+            "Email et nouveau mot de passe sont requis (JSON)."
+        );
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const updated = await updatePasswordByEmailService(email, hashedPassword, role);
+        if (!updated) {
+            return handleResponse(res, 404, "Aucun utilisateur trouvé avec cet email.");
+        }
+
+        return handleResponse(
+            res,
+            200,
+            "Mot de passe mis à jour avec succès 🔑",
+            updated
+        );
     } catch (err) {
         next(err);
     }

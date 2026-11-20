@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import bcrypt from "bcryptjs";
 import {
     createUserService,
     deleteUserService,
@@ -85,16 +86,21 @@ export const updateUser = async (
         return handleResponse(res, 400, "Identifiant d'utilisateur requis");
     }
 
-    const { name, email } = req.body || {};
-    if (!name || !email) {
-        return handleResponse(
-            res,
-            400,
-            "name and email are required in the request body (JSON)"
-        );
-    }
+    const { name, email, password, role } = req.body || {};
     try {
-        const updatedUser = await updateUserService(id, name, email);
+        let hashedPassword: string | undefined;
+        if (password) {
+            hashedPassword = password.startsWith("$2a$") || password.startsWith("$2b$")
+                ? password
+                : await bcrypt.hash(password, 10);
+        }
+
+        const updatedUser = await updateUserService(id, {
+            name,
+            email,
+            password: hashedPassword,
+            role,
+        });
         if (!updatedUser) {
             return handleResponse(res, 404, "user not found");
         }

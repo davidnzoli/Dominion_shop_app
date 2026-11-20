@@ -18,10 +18,10 @@ export const getUserByIdService = async (id: number | string): Promise<User | un
     return result.rows[0];
 };
 
-// Trouver un utilisateur par email avec son mot de passe (utilisé uniquement pour le login)
+// Trouver un utilisateur par email avec son mot de passe (insensible à la casse, utilisé pour le login)
 export const getUserByEmailWithPasswordService = async (email: string): Promise<UserWithPassword | undefined> => {
     const result = await pool.query<UserWithPassword>(
-        "SELECT id, name, email, password, role, created_at, updated_at FROM users WHERE email=$1",
+        "SELECT id, name, email, password, role, created_at, updated_at FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM($1))",
         [email]
     );
     return result.rows[0];
@@ -41,16 +41,51 @@ export const createUserService = async (
     return result.rows[0];
 };
 
-// Mettre à jour un utilisateur
+// Mettre à jour un utilisateur (supporte nom, email, mot de passe haché et rôle)
 export const updateUserService = async (
     id: number | string,
-    name: string,
-    email: string
+    data: { name?: string; email?: string; password?: string; role?: string }
 ): Promise<User | undefined> => {
-    const result = await pool.query<User>(
-        "UPDATE users SET name=$1, email=$2 WHERE id=$3 RETURNING id, name, email, role, created_at, updated_at",
-        [name, email, id]
-    );
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (data.name) {
+        fields.push(`name=$${idx++}`);
+        values.push(data.name);
+    }
+    if (data.email) {
+        fields.push(`email=$${idx++}`);
+        values.push(data.email.trim().toLowerCase());
+    }
+    if (data.password) {
+        fields.push(`password=$${idx++}`);
+        values.push(data.password);
+    }
+    if (data.role) {
+        fields.push(`role=$${idx++}`);
+        values.push(data.role);
+    }
+
+    if (fields.length === 0) return getUserByIdService(id);
+
+    values.push(id);
+    const query = `UPDATE users SET ${fields.join(", ")} WHERE id=$${idx} RETURNING id, name, email, role, created_at, updated_at`;
+    const result = await pool.query<User>(query, values);
+    return result.rows[0];
+};
+
+// Mettre à jour le mot de passe d'un utilisateur par son email
+export const updatePasswordByEmailService = async (
+    email: string,
+    hashedPassword: string,
+    role?: string
+): Promise<User | undefined> => {
+    const query = role
+        ? "UPDATE users SET password=$1, role=$2 WHERE LOWER(TRIM(email))=LOWER(TRIM($3)) RETURNING id, name, email, role, created_at, updated_at"
+        : "UPDATE users SET password=$1 WHERE LOWER(TRIM(email))=LOWER(TRIM($2)) RETURNING id, name, email, role, created_at, updated_at";
+    const values = role ? [hashedPassword, role, email] : [hashedPassword, email];
+    const result = await pool.query<User>(query, values);
     return result.rows[0];
 };
 
