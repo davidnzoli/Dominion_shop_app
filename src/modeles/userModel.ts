@@ -4,7 +4,7 @@ import { User, UserWithPassword } from "../types/user.js";
 // Récupérer tous les utilisateurs (sans le mot de passe)
 export const getAllUserService = async (): Promise<User[]> => {
     const result = await pool.query<User>(
-        "SELECT id, name, email, role, created_at, updated_at FROM users ORDER BY id ASC"
+        "SELECT id, name, email, role,password created_at, updated_at FROM users ORDER BY id ASC"
     );
     return result.rows;
 };
@@ -12,7 +12,7 @@ export const getAllUserService = async (): Promise<User[]> => {
 // Récupérer un utilisateur par ID (sans le mot de passe)
 export const getUserByIdService = async (id: number | string): Promise<User | undefined> => {
     const result = await pool.query<User>(
-        "SELECT id, name, email, role, created_at, updated_at FROM users WHERE id=$1",
+        "SELECT id, name, email, role, password created_at, updated_at FROM users WHERE id=$1",
         [id]
     );
     return result.rows[0];
